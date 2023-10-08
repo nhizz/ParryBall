@@ -7,3 +7,4 @@ Well this script is fully optimized
 6. The code employs throttling to update certain values (e.g., OldTick and OldPosition) only as needed. It doesn't update them with every frame, which would be unnecessary.
 7. The loops inside the event handlers are designed to run efficiently without causing performance bottlenecks. The tick() function is used judiciously to avoid excessive calls.
 8. The code utilizes RunService and the Heartbeat event for any additional optimizations or calculations that need to occur per frame. This ensures that other tasks can be performed efficiently alongside the ball tracking logic.
+Note: The Tick range can synchornize with your fps causing frame perfect blocks so i recommend keeping it 10-5 fps below your normal rate.
