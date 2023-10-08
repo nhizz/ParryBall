@@ -1,107 +1,67 @@
-if getgenv().executed then return end
-
-local UserInputService = game:GetService("UserInputService")
+local Debug = false 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService") 
 
-local LocalPlayer = game:GetService("Players").LocalPlayer
-local Balls = game:GetService("Workspace").Balls
+local Player = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local Remotes = ReplicatedStorage:WaitForChild("Remotes", 9e9)
+local Balls = workspace:WaitForChild("Balls", 9e9)
 
-local IsTargeted = false
-local CanHit = false
-
-function FindBall()
-    local RealBall
-
-    for i, v in pairs(Balls:GetChildren()) do
-        if v:GetAttribute("realBall") == true then
-            RealBall = v
-        end
+local Threshold = 10 
+local function print(...)
+    if Debug then
+        warn(...)
     end
-    return RealBall
 end
 
-function IsTarget()
-    local Ball = FindBall()
-
-    if Ball and Ball:GetAttribute("target") == LocalPlayer.Name then
+local function VerifyBall(Ball)
+    if typeof(Ball) == "Instance" and Ball:IsA("BasePart") and Ball:IsDescendantOf(Balls) and Ball:GetAttribute("realBall") == true then
         return true
     end
-    return false
 end
 
-function DetectBall()
-    local Ball = FindBall()
-
-    if Ball then
-        local BallVelocity = Ball.Velocity.Magnitude
-        local BallPosition = Ball.Position
-
-        local PlayerPosition = LocalPlayer.Character.HumanoidRootPart.Position
-
-        local Distance = (BallPosition - PlayerPosition).Magnitude
-        local PingAccountability = BallVelocity * (game.Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000)
-
-        Distance -= PingAccountability
-        Distance -= shared.config.adjustment
-
-        local Hit = Distance / BallVelocity
-
-        if Hit <= shared.config.hit_range then
-            return true
-        end
-    end
-    return false
+local function IsTarget()
+    return Player.Character and Player.Character:FindFirstChild("Highlight")
 end
 
-function DeflectBall()
-    if IsTargeted and DetectBall() then
-        if shared.config.deflect_type == 'Key Press' then
-            keypress(0x46)
-        else
-            ReplicatedStorage.Remotes.ParryButtonPress:Fire()
-        end
-    end
+local function Parry()
+    Remotes:WaitForChild("ParryButtonPress"):Fire()
 end
 
-UserInputService.InputBegan:Connect(function(Input, IsTyping)
-    if IsTyping then return end
-    if shared.config.mode == 'Toggle' and Input.KeyCode == shared.config.keybind then
-      CanHit = not CanHit
-        if shared.config.notifications then
-            game:GetService("StarterGui"):SetCore("SendNotification",{
-                Title = "Blade Ball",
-                Text = CanHit and 'Enabled!' or 'Disabled!',
-            })
+local pingValue = game.Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000 -- Calculate ping
+
+Balls.ChildAdded:Connect(function(Ball)
+    if not VerifyBall(Ball) then
+        return
+    end
+    
+    print("Ball Spawned:", Ball)
+    
+    local OldPosition = Ball.Position
+    local OldTick = tick()
+    
+    Ball:GetPropertyChangedSignal("Position"):Connect(function()
+        if IsTarget() then
+            local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
+            local Velocity = (OldPosition - Ball.Position).Magnitude
+            
+            -- Adjust for ping
+            local pingAcc = Velocity * pingValue
+            
+            print("Distance:", Distance)
+            print("Velocity:", Velocity)
+            
+            if (Distance / (Velocity - pingAcc)) <= Threshold then
+                Parry()
+            end
         end
-    elseif shared.config.mode == 'Hold' and Input.KeyCode == shared.config.keybind and shared.config.notifications then
-        game:GetService("StarterGui"):SetCore("SendNotification",{
-            Title = "Blade Ball",
-            Text = 'Holding keybind!',
-        })
-    end
+        
+        if (tick() - OldTick >= 1/60) then
+            OldTick = tick()
+            OldPosition = Ball.Position
+        end
+    end)
 end)
 
-UserInputService.InputEnded:Connect(function(Input, IsTyping)
-    if IsTyping then return end
-    if shared.config.mode == 'Hold' and Input.KeyCode == shared.config.keybind and shared.config.notifications then
-        game:GetService("StarterGui"):SetCore("SendNotification",{
-            Title = "Blade Ball",
-            Text = 'No longer holding keybind!',
-        })
-    end
+RunService.Heartbeat:Connect(function()
 end)
-
-game:GetService('RunService').PostSimulation:Connect(function()
-    IsTargeted = IsTarget()
-
-    if shared.config.mode == 'Hold' and UserInputService:IsKeyDown(shared.config.keybind) then
-        DeflectBall()
-    elseif shared.config.mode == 'Toggle' and CanHit then
-        DeflectBall()
-    elseif shared.config.mode == 'Always' then
-        DeflectBall()
-    end
-end)
-
-getgenv().executed = true
