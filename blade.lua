@@ -1,9 +1,9 @@
-```local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local Player = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local Remotes = ReplicatedStorage:WaitForChild("Remotes", math.huge)
-local Balls = workspace:WaitForChild("Balls", math.huge)
+local Remotes = ReplicatedStorage:WaitForChild("Remotes", 9e9)
+local Balls = workspace:WaitForChild("Balls", 9e9)
 
 local function VerifyBall(Ball)
     if typeof(Ball) == "Instance" and Ball:IsA("BasePart") and Ball:IsDescendantOf(Balls) and Ball:GetAttribute("realBall") == true then
@@ -19,6 +19,8 @@ local function Parry()
     Remotes:WaitForChild("ParryButtonPress"):Fire()
 end
 
+local pingValue = game.Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
+
 Balls.ChildAdded:Connect(function(Ball)
     if not VerifyBall(Ball) then
         return
@@ -29,23 +31,25 @@ Balls.ChildAdded:Connect(function(Ball)
     local OldPosition = Ball.Position
     local OldTick = tick()
 
-    Ball:GetPropertyChangedSignal("Position"):Connect(function()
+     Ball:GetPropertyChangedSignal("Position"):Connect(function()
         if IsTarget() then
-            local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
-            local Velocity = (OldPosition - Ball.Position).Magnitude
+            local NewPosition = Ball.Position
+            if NewPosition ~= OldPosition then
+                local CameraFocusPosition = workspace.CurrentCamera.Focus.Position
+                local Distance = (NewPosition - CameraFocusPosition).Magnitude
+                local Velocity = (OldPosition - NewPosition).Magnitude
+                local pingAcc = Velocity * pingValue
 
-            print("Distance:", Distance)
-            print("Velocity:", Velocity)
-            print("Time:", Distance / Velocity)
+                if (Distance / Velocity - pingAcc) <= 8 then
+                    Parry()
+                end
 
-            if (Distance / Velocity) <= 10 then
-                Parry()
+                OldPosition = NewPosition
             end
         end
 
-        if (tick() - OldTick >= 1/50) then
+        if (tick() - OldTick >= 1/60) then
             OldTick = tick()
-            OldPosition = Ball.Position
         end
     end)
-end)```
+end)
