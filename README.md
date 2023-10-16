@@ -9,6 +9,7 @@ Well this script is fully optimized
 8. The code utilizes RunService and the Heartbeat event for any additional optimizations or calculations that need to occur per frame. This ensures that other tasks can be performed efficiently alongside the ball tracking logic.
 
 Note: The Tick range can synchornize with your fps causing frame perfect blocks so i recommend keeping it 10-5 fps below your normal rate.
+
 Update 1:
 1. Added Spam Parry
 2. Added More ServerPing calculation
