@@ -1,4 +1,3 @@
-Well this script is fully optimized
 1. The code structure is synced so its not going up to do math it goes chronologically the way it needs to.
 2. Debug ensures prints are only printed when needed causes barely any bottle necking or peformance issues.
 3. typeof(Ball) and IsA("BasePart"), which are faster than complex operations.
