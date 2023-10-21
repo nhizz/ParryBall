@@ -7,7 +7,6 @@ local Player = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", math.huge)
 local Balls = workspace:WaitForChild("Balls", math.huge)
 local isBallMoving = false
-local Threshold = 9
 
 local function print(...)
     if Debug then
@@ -53,13 +52,14 @@ Balls.ChildAdded:Connect(function(Ball)
     end
 
     print("Ball Spawned:", Ball)
-
+    local Threshold = 9
     local OldPosition = Ball.Position
     local OldTick = tick()
-
+ 
     Ball:GetPropertyChangedSignal("Position"):Connect(function()
         if IsTarget() then
-            local Distance = (Ball.Position - game.Players.LocalPlayer.Character.HumanoidRootPart).Magnitude
+            local CameraFocusPosition = workspace.CurrentCamera.Focus.Position
+            local Distance = (Ball.Position - CameraFocusPosition).Magnitude
             local Velocity = (OldPosition - Ball.Position).Magnitude
             local pingValue = game.Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
             local pingAcc = Velocity * pingValue
@@ -69,7 +69,7 @@ Balls.ChildAdded:Connect(function(Ball)
             end
 
             if isBallMoving then
-                if pingValue * ((Distance + pingAcc) / (Velocity + pingAcc)) <= (Threshold + (pingAcc * 10)) then
+                if ((Distance + pingAcc) / (Velocity + pingAcc)) <= Threshold + PingValue then
                     Parry()
                 end
             end
@@ -83,7 +83,7 @@ Balls.ChildAdded:Connect(function(Ball)
 end)
 
 RunService.Heartbeat:Connect(function()
-        if FKeyPressed and IsTarget() then
+        if FKeyPressed and isBallMoving() then
             SpamParry()
         end
     end)
