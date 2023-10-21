@@ -62,13 +62,13 @@ Balls.ChildAdded:Connect(function(Ball)
             local Distance = (Ball.Position - CameraFocusPosition).Magnitude
             local Velocity = (OldPosition - Ball.Position).Magnitude
             local pingValue = game.Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
-            local pingAcc = Velocity * pingValue
 
             if Velocity > 0 then
                 isBallMoving = true
             end
 
             if isBallMoving then
+                         local pingAcc = Velocity * pingValue
                 if ((Distance + pingAcc) / (Velocity + pingAcc)) <= Threshold + PingValue then
                     Parry()
                 end
