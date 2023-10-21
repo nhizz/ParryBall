@@ -1,3 +1,4 @@
+# Blade Ball
 1. The code structure is synced so its not going up to do math it goes chronologically the way it needs to.
 2. Debug ensures prints are only printed when needed causes barely any bottle necking or peformance issues.
 3. typeof(Ball) and IsA("BasePart"), which are faster than complex operations.
@@ -9,6 +10,6 @@
 
 Note: The Tick range can synchornize with your fps causing frame perfect blocks so i recommend keeping it 10-5 fps below your normal rate.
 
-Update 1:
+# Update 1
 1. Added Spam Parry
 2. Added More ServerPing calculation
